@@ -1,0 +1,6 @@
+{
+  "name": "MedAI Skin",
+  "description": "Herramienta de apoyo al diagnóstico clínico dermatológico con análisis de imagen asistido por IA y chat clínico interactivo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
