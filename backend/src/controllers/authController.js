@@ -16,7 +16,7 @@ const specialtyLabels = {
 // ── POST /api/auth/register ──────────────────────────────────
 const register = async (req, res, next) => {
   try {
-    const { email, nombre, password, license, specialty } = req.body;
+    const { email, nombre, password, license, specialty, rol } = req.body;
 
     // Validaciones básicas
     if (!email || !nombre || !password) {
@@ -44,15 +44,18 @@ const register = async (req, res, next) => {
     // Formatear especialidad
     const especialidadFormateada = specialtyLabels[specialty] || specialty || "Dermatología Clínica";
 
+    // Determinar rol: si no viene o no es válido, se asume paciente (Usuario General)
+    const rolAsignado = (rol === 'medico' || rol === 'admin') ? rol : 'paciente';
+
     // Hashear contraseña y crear usuario
     const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
     const usuario = await Usuario.crear(
       email.toLowerCase().trim(),
       nombre.trim(),
       password_hash,
-      license ? license.trim() : 'CO-00000-GEN',
-      especialidadFormateada,
-      'usuario' // por defecto se registra como usuario regular
+      license ? license.trim() : (rolAsignado === 'paciente' ? 'NO-APLICA' : 'CO-00000-GEN'),
+      rolAsignado === 'paciente' ? 'Usuario General' : especialidadFormateada,
+      rolAsignado
     );
 
     return res.status(201).json({

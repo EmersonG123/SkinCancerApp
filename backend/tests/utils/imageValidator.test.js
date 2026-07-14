@@ -1,5 +1,4 @@
 // tests/utils/imageValidator.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSharpMetadata = vi.fn();
 const mockSharp = vi.fn(() => ({

@@ -1,5 +1,4 @@
 // tests/models/ChatHistorial.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockDb = {
   query: vi.fn(),

@@ -10,7 +10,7 @@ export interface User {
   specialty: string;
   analyses: number;
   precision: number;
-  rol?: "usuario" | "admin";
+  rol?: "admin" | "medico" | "paciente" | "usuario";
 }
 
 export type RiskLevel = "bajo" | "moderado" | "alto";

@@ -9,9 +9,10 @@ interface AnalysisTabProps {
   userAnalysesCount: number;
   onUpdateAnalysesCount: (newCount: number) => void;
   selectedRecord?: DiagnosticRecord | null;
+  userRol?: string;
 }
 
-export default function AnalysisTab({ onAddNewRecord, userAnalysesCount, onUpdateAnalysesCount, selectedRecord }: AnalysisTabProps) {
+export default function AnalysisTab({ onAddNewRecord, userAnalysesCount, onUpdateAnalysesCount, selectedRecord, userRol }: AnalysisTabProps) {
   // Loaded image preview state
   const [selectedImage, setSelectedImage] = useState<string>(PREVIEW_IMAGE_URL);
   const [fileName, setFileName] = useState<string>("lesion_paciente_default.jpg");
@@ -438,9 +439,11 @@ export default function AnalysisTab({ onAddNewRecord, userAnalysesCount, onUpdat
               {diagnosis.nombre_amigable}
             </h3>
             
-            <p className="text-[10px] font-bold text-primary/80 font-mono mt-1 capitalize">
-              Código ICD-10 • {diagnosis.codigo_icd10}
-            </p>
+            {userRol !== "paciente" && (
+              <p className="text-[10px] font-bold text-primary/80 font-mono mt-1 capitalize">
+                Código ICD-10 • {diagnosis.codigo_icd10}
+              </p>
+            )}
 
             {/* Simulated interactive progress bar matching specified risk level */}
             <div className="w-full bg-slate-900 h-2 rounded-full mt-3 overflow-hidden border border-slate-800">
@@ -461,7 +464,7 @@ export default function AnalysisTab({ onAddNewRecord, userAnalysesCount, onUpdat
 
             <div>
               <h4 className="font-bold text-text-main flex items-center gap-1.5 border-b border-slate-800/80 pb-1.5 text-[11px] font-mono uppercase tracking-wider">
-                <span className="text-primary neon-glow">■</span> Intervención Quirúrgica Directa
+                <span className="text-primary neon-glow">■</span> {userRol === "paciente" ? "Recomendaciones Generales" : "Intervención Quirúrgica Directa"}
               </h4>
               <ul className="list-none text-text-secondary mt-2 space-y-2 pl-1 font-sans">
                 {diagnosis.recomendacion.map((rec, i) => (
@@ -483,25 +486,28 @@ export default function AnalysisTab({ onAddNewRecord, userAnalysesCount, onUpdat
             </div>
           </div>
 
-          <div className="flex gap-3 pt-1 border-t border-border-divider/70">
-            <button
-              onClick={triggerPrintReport}
-              className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/45 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(0,240,255,0.05)] cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-1.5"
-            >
-              <Printer className="w-4 h-4 text-primary" />
-              <span>Imprimir Ficha</span>
-            </button>
-            <button
-              onClick={triggerShareLink}
-              title="Compartir o copiar enlace"
-              className="px-3.5 py-2.5 border border-slate-800 text-text-secondary rounded-lg bg-slate-900/60 hover:text-primary hover:border-primary/40 focus:outline-none transition-all flex items-center justify-center cursor-pointer"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          </div>
+          {userRol !== "paciente" && (
+            <div className="flex gap-3 pt-1 border-t border-border-divider/70">
+              <button
+                onClick={triggerPrintReport}
+                className="flex-1 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/45 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(0,240,255,0.05)] cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Printer className="w-4 h-4 text-primary" />
+                <span>Imprimir Ficha</span>
+              </button>
+              <button
+                onClick={triggerShareLink}
+                title="Compartir o copiar enlace"
+                className="px-3.5 py-2.5 border border-slate-800 text-text-secondary rounded-lg bg-slate-900/60 hover:text-primary hover:border-primary/40 focus:outline-none transition-all flex items-center justify-center cursor-pointer"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Chatbot Widget Inline */}
+        {userRol !== "paciente" && (
         <div className="glassmorphism rounded-2xl border border-primary/25 shadow-[0_0_20px_rgba(0,240,255,0.03)] overflow-hidden flex flex-col h-[400px]">
           {/* Header */}
           <div className="bg-slate-950 border-b border-slate-850 px-4 py-3 text-text-main flex justify-between items-center shadow-[0_2px_15px_rgba(0,0,0,0.4)]">
@@ -606,6 +612,7 @@ export default function AnalysisTab({ onAddNewRecord, userAnalysesCount, onUpdat
             </button>
           </form>
         </div>
+        )}
 
       </div>
     </div>

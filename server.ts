@@ -15,6 +15,8 @@ import historialRoutes from "./backend/src/routes/historialRoutes";
 import chatRoutes from "./backend/src/routes/chatRoutes";
 import usuarioRoutes from "./backend/src/routes/usuarioRoutes";
 import errorHandler from "./backend/src/middlewares/errorHandler";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./backend/swagger";
 
 const app = express();
 const PORT = 3000; // Unificado en el puerto 3000
@@ -29,6 +31,9 @@ app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 // ── Servir archivos estáticos (imágenes subidas localmente) ──
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// ── Documentación Swagger ────────────────────────────────────
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ── Registrar Rutas de la API Real ───────────────────────────
 app.use('/api/auth',      authRoutes);

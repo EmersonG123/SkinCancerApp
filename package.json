@@ -8,6 +8,8 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
@@ -28,6 +30,8 @@
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "sharp": "^0.33.4",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "vite": "^6.2.3"
   },
   "devDependencies": {
@@ -38,6 +42,7 @@
     "@types/multer": "^1.4.11",
     "@types/node": "^22.14.0",
     "@types/pg": "^8.11.6",
+    "@playwright/test": "^1.42.1",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",

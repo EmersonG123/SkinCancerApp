@@ -1,5 +1,4 @@
 // tests/controllers/analisisController.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockDb = {
   query: vi.fn(),
@@ -231,5 +230,41 @@ describe('analisisController – analizar', () => {
         }),
       })
     );
+  });
+
+  // ── Caso 5: Clase desconocida sin recomendación mapeada ──────
+  it('debe construir explicación fallback si la recomendación no existe', async () => {
+    const req = crearReqConImagen();
+    const res = mockRes();
+
+    ImagenLesion.crear.mockResolvedValue({ id_imagen: 14, ruta_archivo: 'test.jpg' });
+    predecir.mockResolvedValue({ clase: 'unknown', confianza: 50.0 });
+    Recomendacion.findByClase.mockResolvedValue(null);
+    AnalisisIA.crear.mockResolvedValue({
+      id_analisis: 23,
+      clase_predicha: 'unknown',
+      nivel_riesgo: 'bajo'
+    });
+
+    await analizar(req, res, mockNext);
+
+    expect(AnalisisIA.crear).toHaveBeenCalledWith(
+      1, 14, 'unknown', 50.0, 'bajo',
+      'Se detectó una lesión de tipo "unknown" con una confianza del 50.0%.',
+      expect.any(String)
+    );
+  });
+
+  // ── Caso 6: Error genérico debe llamar a next(err) ───────────
+  it('debe llamar a next con el error si ocurre una excepción inesperada', async () => {
+    const req = crearReqConImagen();
+    const res = mockRes();
+    const errorBD = new Error('Error de Base de Datos');
+
+    ImagenLesion.crear.mockRejectedValue(errorBD);
+
+    await analizar(req, res, mockNext);
+
+    expect(mockNext).toHaveBeenCalledWith(errorBD);
   });
 });

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { User, Lock, HeartPulse } from "lucide-react";
+import { User, Lock, HeartPulse, Eye, EyeOff } from "lucide-react";
 import { User as UserType } from "../types";
 import { api, saveSession } from "../services/api";
 
@@ -9,11 +9,15 @@ interface RegisterViewProps {
 }
 
 export default function RegisterView({ onRegisterSuccess, onToggleToLogin }: RegisterViewProps) {
+  const [rol, setRol] = useState<"paciente" | "medico">("paciente");
   const [name, setName] = useState("");
   const [license, setLicense] = useState("");
   const [specialty, setSpecialty] = useState("dermatology");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,8 +26,13 @@ export default function RegisterView({ onRegisterSuccess, onToggleToLogin }: Reg
     e.preventDefault();
     setError("");
 
-    if (!name.trim() || !license.trim() || !email.trim() || !password.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || (rol === "medico" && !license.trim())) {
       setError("Por favor, rellene todos los campos requeridos para continuar.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden. Por favor, verifíquelas.");
       return;
     }
 
@@ -37,11 +46,12 @@ export default function RegisterView({ onRegisterSuccess, onToggleToLogin }: Reg
     try {
       // Registramos en el backend real
       await api.register({
-        nombre: name.startsWith("Dr.") ? name : `Dr. ${name}`,
+        nombre: rol === "medico" ? (name.startsWith("Dr.") ? name : `Dr. ${name}`) : name,
         email,
         password,
-        license,
-        specialty,
+        license: rol === "paciente" ? "NO-APLICA" : license,
+        specialty: rol === "paciente" ? "Usuario General" : specialty,
+        rol,
       });
 
       // Login automático tras el registro
@@ -75,6 +85,29 @@ export default function RegisterView({ onRegisterSuccess, onToggleToLogin }: Reg
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="w-full space-y-4 font-sans">
+        
+        {/* Role Selector */}
+        <div className="flex bg-slate-900/60 p-1 rounded-lg border border-slate-700/50 mb-2">
+          <button
+            type="button"
+            onClick={() => setRol("paciente")}
+            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
+              rol === "paciente" ? "bg-primary text-black shadow-[0_0_10px_rgba(0,240,255,0.3)]" : "text-text-secondary hover:text-white"
+            }`}
+          >
+            Usuario General
+          </button>
+          <button
+            type="button"
+            onClick={() => setRol("medico")}
+            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
+              rol === "medico" ? "bg-primary text-black shadow-[0_0_10px_rgba(0,240,255,0.3)]" : "text-text-secondary hover:text-white"
+            }`}
+          >
+            Médico / Profesional
+          </button>
+        </div>
+
         {/* Full Name */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-name">
@@ -95,43 +128,45 @@ export default function RegisterView({ onRegisterSuccess, onToggleToLogin }: Reg
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Medical License */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-license">
-              Nº Colegiado / ID
-            </label>
-            <input
-              id="reg-license"
-              type="text"
-              value={license}
-              onChange={(e) => setLicense(e.target.value)}
-              placeholder="12345678"
-              className="w-full px-4 py-2.5 bg-slate-950/75 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
-              required
-              disabled={isLoading}
-            />
-          </div>
+        {rol === "medico" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Medical License */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-license">
+                Nº Colegiado / ID
+              </label>
+              <input
+                id="reg-license"
+                type="text"
+                value={license}
+                onChange={(e) => setLicense(e.target.value)}
+                placeholder="12345678"
+                className="w-full px-4 py-2.5 bg-slate-950/75 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
+                required={rol === "medico"}
+                disabled={isLoading}
+              />
+            </div>
 
-          {/* Specialty */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-specialty">
-              Especialidad Core
-            </label>
-            <select
-              id="reg-specialty"
-              value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all cursor-pointer"
-              disabled={isLoading}
-            >
-              <option value="dermatology" className="bg-slate-950 text-text-main">Dermatología</option>
-              <option value="general" className="bg-slate-950 text-text-main">Medicina General</option>
-              <option value="oncology" className="bg-slate-950 text-text-main">Oncología</option>
-              <option value="research" className="bg-slate-950 text-text-main">Investigación</option>
-            </select>
+            {/* Specialty */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-specialty">
+                Especialidad Core
+              </label>
+              <select
+                id="reg-specialty"
+                value={specialty}
+                onChange={(e) => setSpecialty(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all cursor-pointer"
+                disabled={isLoading}
+              >
+                <option value="dermatology" className="bg-slate-950 text-text-main">Dermatología</option>
+                <option value="general" className="bg-slate-950 text-text-main">Medicina General</option>
+                <option value="oncology" className="bg-slate-950 text-text-main">Oncología</option>
+                <option value="research" className="bg-slate-950 text-text-main">Investigación</option>
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Email */}
         <div className="flex flex-col gap-1">
@@ -153,23 +188,61 @@ export default function RegisterView({ onRegisterSuccess, onToggleToLogin }: Reg
           </div>
         </div>
 
-        {/* Password */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-password">
-            Clave de Seguridad
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary font-mono">■</span>
-            <input
-              id="reg-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full pl-8 pr-4 py-2.5 bg-slate-950/75 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
-              required
-              disabled={isLoading}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Password */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-password">
+              Clave de Seguridad
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary font-mono">■</span>
+              <input
+                id="reg-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-8 pr-10 py-2.5 bg-slate-950/75 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
+                required
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+                disabled={isLoading}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-text-secondary ml-1 font-mono uppercase tracking-wider" htmlFor="reg-confirm-password">
+              Confirmar Clave
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary font-mono">■</span>
+              <input
+                id="reg-confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-8 pr-10 py-2.5 bg-slate-950/75 border border-slate-700 rounded-lg text-sm text-text-main focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none transition-all"
+                required
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+                disabled={isLoading}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
         </div>
 

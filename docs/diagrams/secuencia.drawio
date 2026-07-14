@@ -1,0 +1,87 @@
+<mxfile host="Electron" modified="2026-07-08T18:00:00.000Z" version="21.0.0" type="device">
+  <diagram id="SkinSequence" name="Secuencia de Inferencia">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="SkinCancerApp - Diagrama de Secuencia de Inferencia y Diagnóstico" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=18;fontStyle=1;fontColor=#ffffff" vertex="1" parent="1">
+          <mxGeometry x="150" y="30" width="550" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Participants (Lifelines) -->
+        <mxCell id="ll_react" value="Cliente React&lt;br&gt;(Frontend)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#00193a" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="100" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_react_act" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#0050ef;strokeColor=#00193a" vertex="1" parent="ll_react">
+          <mxGeometry x="45" y="60" width="10" height="420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ll_node" value="Express Server&lt;br&gt;(Backend MVC)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2d7600" vertex="1" parent="1">
+          <mxGeometry x="260" y="100" width="100" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_node_act" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#60a917;strokeColor=#2d7600" vertex="1" parent="ll_node">
+          <mxGeometry x="45" y="80" width="10" height="380" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ll_python" value="FastAPI Service&lt;br&gt;(IA predict)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#e3c800;fontColor=#000000;strokeColor=#b09500" vertex="1" parent="1">
+          <mxGeometry x="440" y="100" width="100" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_python_act" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#e3c800;strokeColor=#b09500" vertex="1" parent="ll_python">
+          <mxGeometry x="45" y="140" width="10" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ll_db" value="PostgreSQL&lt;br&gt;(SkinDB)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#a20025;fontColor=#ffffff;strokeColor=#6f000f" vertex="1" parent="1">
+          <mxGeometry x="620" y="100" width="100" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_db_act" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#a20025;strokeColor=#6f000f" vertex="1" parent="ll_db">
+          <mxGeometry x="45" y="240" width="10" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Message arrows -->
+        <mxCell id="msg1" value="POST /api/analisis/analizar" style="html=1;verticalAlign=bottom;endArrow=block;entryX=0;entryY=0;strokeColor=#ffffff;fontColor=#ffffff" edge="1" parent="1" source="ll_react_act" target="ll_node_act">
+          <mxGeometry x="0.1" y="10" relative="1" as="geometry">
+            <Array points="180 180"]
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg2" value="Axios POST /predict (Multipart)" style="html=1;verticalAlign=bottom;endArrow=block;entryX=0;entryY=0;strokeColor=#ffffff;fontColor=#ffffff" edge="1" parent="1" source="ll_node_act" target="ll_python_act">
+          <mxGeometry x="0.1" y="10" relative="1" as="geometry">
+            <Array points="360 240"]
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg3" value="Retorna { clase, confianza }" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;exitX=0;exitY=0.9;strokeColor=#ffffff;fontColor=#ffffff" edge="1" parent="1" source="ll_python_act" target="ll_node_act">
+          <mxGeometry x="-0.1" y="10" relative="1" as="geometry">
+            <Array points="380 300"]
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg4" value="Consulta recomendaciones y guarda análisis" style="html=1;verticalAlign=bottom;endArrow=block;entryX=0;entryY=0;strokeColor=#ffffff;fontColor=#ffffff" edge="1" parent="1" source="ll_node_act" target="ll_db_act">
+          <mxGeometry x="0.1" y="10" relative="1" as="geometry">
+            <Array points="450 340"]
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg5" value="Retorna id_analisis y textos" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;exitX=0;exitY=0.9;strokeColor=#ffffff;fontColor=#ffffff" edge="1" parent="1" source="ll_db_act" target="ll_node_act">
+          <mxGeometry x="-0.1" y="10" relative="1" as="geometry">
+            <Array points="460 420"]
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="msg6" value="Retorna JSON (Ficha diagnóstica + recomendaciones)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;exitX=0;exitY=0.95;strokeColor=#ffffff;fontColor=#ffffff" edge="1" parent="1" source="ll_node_act" target="ll_react_act">
+          <mxGeometry x="-0.1" y="10" relative="1" as="geometry">
+            <Array points="190 450"]
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

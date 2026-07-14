@@ -1,0 +1,66 @@
+<mxfile host="Electron" modified="2026-07-08T18:00:00.000Z" version="21.0.0" type="device">
+  <diagram id="SkinCancer_C4" name="Arquitectura C4">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="SkinCancerApp - Diagrama de Arquitectura de Contenedores (C4)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=18;fontStyle=1;fontColor=#ffffff" vertex="1" parent="1">
+          <mxGeometry x="150" y="30" width="500" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Clinician Actor -->
+        <mxCell id="user_clinician" value="Médico Clínico&lt;br&gt;(Dermatólogo)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006e10" vertex="1" parent="1">
+          <mxGeometry x="60" y="240" width="40" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- React Frontend Container -->
+        <mxCell id="container_frontend" value="&lt;b&gt;Cliente Web React SPA&lt;/b&gt;&lt;br&gt;[Vite / TypeScript]&lt;br&gt;&lt;br&gt;Interfaz clínica, subida de imágenes de lesiones y chat conversacional de soporte." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0050ef;strokeColor=#00193a;fontColor=#ffffff;align=center" vertex="1" parent="1">
+          <mxGeometry x="200" y="220" width="200" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Express.js Backend Container -->
+        <mxCell id="container_backend" value="&lt;b&gt;Servidor Express.js (Node.js)&lt;/b&gt;&lt;br&gt;[MVC Architecture]&lt;br&gt;&lt;br&gt;Gestiona sesiones, carga de archivos, consultas SQL nativas y chatbot local." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#60a917;strokeColor=#2d7600;fontColor=#ffffff;align=center" vertex="1" parent="1">
+          <mxGeometry x="500" y="220" width="200" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Redis Cache Container -->
+        <mxCell id="container_redis" value="&lt;b&gt;Caché (Redis)&lt;/b&gt;&lt;br&gt;[ioredis]&lt;br&gt;&lt;br&gt;Caché de consultas rápidas de perfiles e historial." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;strokeColor=#00193a;fontColor=#ffffff;align=center" vertex="1" parent="1">
+          <mxGeometry x="525" y="60" width="150" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- PostgreSQL Database Container -->
+        <mxCell id="container_db" value="&lt;b&gt;Base de Datos (SkinDB)&lt;/b&gt;&lt;br&gt;[PostgreSQL]&lt;br&gt;&lt;br&gt;Esquema relacional de usuarios, lesiones, diagnósticos e historial de chat." style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#a20025;strokeColor=#6f000f;fontColor=#ffffff;align=center" vertex="1" parent="1">
+          <mxGeometry x="525" y="440" width="150" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Python FastAPI Microservice Container -->
+        <mxCell id="container_ia" value="&lt;b&gt;Servidor IA FastAPI&lt;/b&gt;&lt;br&gt;[Python 8001 / PyTorch]&lt;br&gt;&lt;br&gt;Microservicio que ejecuta el clasificador DenseNet201 (HAM10000)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=#b09500;fontColor=#000000;align=center" vertex="1" parent="1">
+          <mxGeometry x="800" y="225" width="200" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Relationships -->
+        <mxCell id="edge1" value="Interactúa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.3333333333333333;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#ffffff" edge="1" parent="1" source="user_clinician" target="container_frontend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge2" value="Solicitudes REST (HTTPS/JSON)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#ffffff" edge="1" parent="1" source="container_frontend" target="container_backend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge3" value="pg client / SQL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=#ffffff" edge="1" parent="1" source="container_backend" target="container_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge4" value="Consultas Redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#ffffff" edge="1" parent="1" source="container_backend" target="container_redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge5" value="Inferencia Axios (multipart)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#ffffff" edge="1" parent="1" source="container_backend" target="container_ia">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

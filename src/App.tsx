@@ -11,12 +11,14 @@ import HistoryTab from "./components/HistoryTab";
 import ProfileTab from "./components/ProfileTab";
 import ThreeDTab from "./components/ThreeDTab";
 import AdminTab from "./components/AdminTab";
+import LandingPage from "./components/LandingPage";
 import { api, clearSession } from "./services/api";
 
 export default function App() {
   // Session Authentication state
   const [user, setUser] = useState<User | null>(null);
   const [showRegister, setShowRegister] = useState<boolean>(false);
+  const [showLanding, setShowLanding] = useState<boolean>(true);
 
   // App Workspace State
   const [activeTab, setActiveTab] = useState<"analisis" | "historial" | "perfil" | "inicio" | "admin">("inicio");
@@ -156,8 +158,18 @@ export default function App() {
 
   // Render Login/Register screens if not logged in
   if (!user) {
+    if (showLanding) {
+      return <LandingPage onLoginClick={() => setShowLanding(false)} />;
+    }
+
     return (
-      <div className="min-h-screen bg-bg-general bg-cyber-grid text-text-main flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="min-h-screen bg-bg-general bg-cyber-grid text-text-main flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 font-sans relative">
+        <button 
+          onClick={() => setShowLanding(true)}
+          className="absolute top-6 left-6 md:top-10 md:left-10 text-text-secondary hover:text-white transition-colors flex items-center gap-2 font-bold text-sm bg-slate-900/50 px-4 py-2 rounded-lg border border-white/10 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+        >
+          &larr; Volver al inicio
+        </button>
         {showRegister ? (
           <RegisterView
             onRegisterSuccess={handleRegisterSuccess}
@@ -237,17 +249,19 @@ export default function App() {
                 <span>Análisis Clínico</span>
               </button>
 
-              <button
-                onClick={() => setActiveTab("historial")}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer border ${
-                  activeTab === "historial"
-                    ? "bg-primary/20 text-primary border-primary/50 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
-                    : "text-text-secondary border-transparent hover:text-primary hover:bg-slate-800/40"
-                }`}
-              >
-                <ClipboardList className="w-4 h-4" />
-                <span>Base Histórica</span>
-              </button>
+              {user.rol !== "paciente" && (
+                <button
+                  onClick={() => setActiveTab("historial")}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer border ${
+                    activeTab === "historial"
+                      ? "bg-primary/20 text-primary border-primary/50 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
+                      : "text-text-secondary border-transparent hover:text-primary hover:bg-slate-800/40"
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  <span>Base Histórica</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setActiveTab("perfil")}
@@ -333,15 +347,17 @@ export default function App() {
             <FileText className="w-5 h-5" />
             <span>Análisis</span>
           </button>
-          <button
-            onClick={() => setActiveTab("historial")}
-            className={`flex flex-col items-center gap-1 text-[10px] font-bold ${
-              activeTab === "historial" ? "text-primary neon-glow" : "text-text-secondary"
-            }`}
-          >
-            <ClipboardList className="w-5 h-5" />
-            <span>Historial</span>
-          </button>
+          {user.rol !== "paciente" && (
+            <button
+              onClick={() => setActiveTab("historial")}
+              className={`flex flex-col items-center gap-1 text-[10px] font-bold ${
+                activeTab === "historial" ? "text-primary neon-glow" : "text-text-secondary"
+              }`}
+            >
+              <ClipboardList className="w-5 h-5" />
+              <span>Historial</span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab("perfil")}
             className={`flex flex-col items-center gap-1 text-[10px] font-bold ${
@@ -364,6 +380,7 @@ export default function App() {
             userAnalysesCount={user.analyses}
             onUpdateAnalysesCount={handleUpdateAnalysesCount}
             selectedRecord={selectedRecordForAnalysisTab}
+            userRol={user.rol}
           />
         )}
 

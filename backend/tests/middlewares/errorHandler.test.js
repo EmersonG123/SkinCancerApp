@@ -1,5 +1,4 @@
 // tests/middlewares/errorHandler.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import errorHandler from '../../src/middlewares/errorHandler';
 
@@ -18,7 +17,7 @@ describe('errorHandler middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Suprimir console.error en los tests
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   // ── Caso 1: Error genérico 500 ─────────────────────────────

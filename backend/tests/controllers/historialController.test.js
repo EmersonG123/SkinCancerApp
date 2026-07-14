@@ -1,5 +1,4 @@
 // tests/controllers/historialController.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockDb = {
   query: vi.fn(() => Promise.resolve({ rows: [{ id_imagen: 99 }] })),
@@ -100,6 +99,34 @@ describe('historialController – listarHistorial', () => {
       expect.objectContaining({ clase: 'mel' })
     );
   });
+  it('debe inicializar historial si el usuario no tiene registros', async () => {
+    const req = { usuario: { id_usuario: 1 }, query: { page: '1', limit: '10' } };
+    const res = mockRes();
+
+    // Simulamos que al inicio no hay, luego el controlador llama a inicializar, luego ya hay.
+    AnalisisIA.countByUsuario.mockResolvedValueOnce(0).mockResolvedValueOnce(3);
+    AnalisisIA.findByUsuario.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id_analisis: 1 }]);
+
+    // Asumimos que pool.query se ejecuta varias veces para insertar
+    mockDb.query.mockResolvedValue({ rows: [{ id_imagen: 99 }] });
+
+    await listarHistorial(req, res, mockNext);
+
+    expect(mockDb.query).toHaveBeenCalled(); // Se inicializó el historial
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      paginacion: expect.objectContaining({ total_items: 3 })
+    }));
+  });
+
+  it('debe manejar errores y llamar a next', async () => {
+    const req = { usuario: { id_usuario: 1 }, query: {} };
+    const res = mockRes();
+    AnalisisIA.findByUsuario.mockRejectedValue(new Error('DB Fallo'));
+
+    await listarHistorial(req, res, mockNext);
+
+    expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+  });
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -186,6 +213,13 @@ describe('historialController – obtenerDetalle', () => {
     // Assert
     expect(res.status).toHaveBeenCalledWith(400);
   });
+  it('debe manejar errores internos', async () => {
+    const req = { usuario: { id_usuario: 1 }, params: { id: '5' } };
+    const res = mockRes();
+    AnalisisIA.findById.mockRejectedValue(new Error('Falló db'));
+    await obtenerDetalle(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalled();
+  });
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -240,5 +274,42 @@ describe('historialController – eliminarAnalisis', () => {
 
     // Assert
     expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('debe devolver 400 si el ID a eliminar es inválido', async () => {
+    const req = { usuario: { id_usuario: 1 }, params: { id: 'invalido' } };
+    const res = mockRes();
+    await eliminarAnalisis(req, res, mockNext);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('debe devolver 403 si el análisis a eliminar es de otro', async () => {
+    const req = { usuario: { id_usuario: 1 }, params: { id: '5' } };
+    const res = mockRes();
+    AnalisisIA.findById.mockResolvedValue({ id_analisis: 5, id_usuario: 99 });
+
+    await eliminarAnalisis(req, res, mockNext);
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('debe manejar caso donde fs falla sin que caiga la app', async () => {
+    const req = { usuario: { id_usuario: 1 }, params: { id: '5' } };
+    const res = mockRes();
+    AnalisisIA.findById.mockResolvedValue({ id_analisis: 5, id_usuario: 1, ruta_archivo: 'uploads/5.jpg' });
+    AnalisisIA.eliminar.mockResolvedValue();
+    ImagenLesion.eliminar.mockResolvedValue();
+    fs.existsSync.mockReturnValue(true);
+    fs.unlinkSync.mockImplementation(() => { throw new Error('Unlink error'); }); // Simulate warning path
+
+    await eliminarAnalisis(req, res, mockNext);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ mensaje: 'Análisis eliminado correctamente.' }));
+  });
+
+  it('debe manejar error interno de base de datos', async () => {
+    const req = { usuario: { id_usuario: 1 }, params: { id: '5' } };
+    const res = mockRes();
+    AnalisisIA.findById.mockRejectedValue(new Error('Internal'));
+    await eliminarAnalisis(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalled();
   });
 });

@@ -1,122 +1,111 @@
 // tests/middlewares/uploadMiddleware.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ── Mocks ────────────────────────────────────────────────────
-// Multer es complejo de mockear directamente, así que probamos la lógica del fileFilter
-// extrayendo las constantes y la lógica de validación de forma aislada.
+const mockMulterMiddleware = vi.fn((req, res, next) => {
+  if (req.simularErrorMulterTamanio) {
+    const err = new Error('File too large');
+    err.code = 'LIMIT_FILE_SIZE';
+    Object.setPrototypeOf(err, mockMulter.MulterError.prototype);
+    return next(err);
+  }
+  if (req.simularErrorMulter) {
+    const err = new Error('Unexpected field');
+    Object.setPrototypeOf(err, mockMulter.MulterError.prototype);
+    return next(err);
+  }
+  if (req.simularErrorNormal) {
+    return next(new Error('Normal error'));
+  }
+  if (!req.file && !req.simularFaltaArchivo) {
+    req.file = { originalname: 'test.jpg' };
+  } else if (req.simularFaltaArchivo) {
+    req.file = undefined;
+  }
+  return next();
+});
 
-describe('uploadMiddleware – Validación de tipos de archivo', () => {
-  const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
+const mockMulter = vi.fn(() => ({
+  single: vi.fn(() => mockMulterMiddleware)
+}));
+mockMulter.memoryStorage = vi.fn();
+mockMulter.MulterError = class MulterError extends Error {
+  constructor(message) { super(message); }
+};
 
-  // ── Caso 1: Tipo JPEG permitido ───────────────────────────
-  it('debe aceptar archivos JPEG', () => {
-    // Arrange
-    const mimetype = 'image/jpeg';
+require.cache[require.resolve('multer')] = { exports: mockMulter };
 
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
+const uploadMiddleware = require('../../src/middlewares/uploadMiddleware');
 
-    // Assert
-    expect(esPermitido).toBe(true);
+describe('uploadMiddleware', () => {
+  const mockRes = () => {
+    const res = {};
+    res.status = vi.fn().mockReturnValue(res);
+    res.json = vi.fn().mockReturnValue(res);
+    return res;
+  };
+
+  it('debe devolver 400 si el archivo excede el tamaño', () => {
+    const req = { simularErrorMulterTamanio: true };
+    const res = mockRes();
+    const next = vi.fn();
+    req.multerNext = (err) => {
+      // In uploadMiddleware, upload.single is called, and the callback handles errors.
+      // But uploadMiddleware is just a wrapper around upload.single('imagen')(req, res, (err) => ...)
+    };
+
+    // uploadMiddleware actually calls upload.single directly and passes the callback
+    uploadMiddleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Archivo demasiado grande' }));
   });
 
-  // ── Caso 2: Tipo PNG permitido ────────────────────────────
-  it('debe aceptar archivos PNG', () => {
-    // Arrange
-    const mimetype = 'image/png';
-
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
-
-    // Assert
-    expect(esPermitido).toBe(true);
+  it('debe devolver 400 por otro MulterError', () => {
+    const req = { simularErrorMulter: true };
+    const res = mockRes();
+    const next = vi.fn();
+    uploadMiddleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error de carga' }));
   });
 
-  // ── Caso 3: Tipo WEBP permitido ───────────────────────────
-  it('debe aceptar archivos WEBP', () => {
-    // Arrange
-    const mimetype = 'image/webp';
-
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
-
-    // Assert
-    expect(esPermitido).toBe(true);
+  it('debe devolver 400 por un error normal', () => {
+    const req = { simularErrorNormal: true };
+    const res = mockRes();
+    const next = vi.fn();
+    uploadMiddleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Error de validación' }));
   });
 
-  // ── Caso 4: Tipo BMP permitido ────────────────────────────
-  it('debe aceptar archivos BMP', () => {
-    // Arrange
-    const mimetype = 'image/bmp';
-
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
-
-    // Assert
-    expect(esPermitido).toBe(true);
+  it('debe devolver 400 si no hay archivo (req.file undefined)', () => {
+    const req = { simularFaltaArchivo: true };
+    const res = mockRes();
+    const next = vi.fn();
+    uploadMiddleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Imagen requerida' }));
   });
 
-  // ── Caso 5: Tipo PDF rechazado ────────────────────────────
-  it('debe rechazar archivos PDF', () => {
-    // Arrange
-    const mimetype = 'application/pdf';
-
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
-
-    // Assert
-    expect(esPermitido).toBe(false);
-  });
-
-  // ── Caso 6: Tipo GIF rechazado ────────────────────────────
-  it('debe rechazar archivos GIF', () => {
-    // Arrange
-    const mimetype = 'image/gif';
-
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
-
-    // Assert
-    expect(esPermitido).toBe(false);
-  });
-
-  // ── Caso 7: Tipo text/plain rechazado ─────────────────────
-  it('debe rechazar archivos de texto plano', () => {
-    // Arrange
-    const mimetype = 'text/plain';
-
-    // Act
-    const esPermitido = TIPOS_PERMITIDOS.includes(mimetype);
-
-    // Assert
-    expect(esPermitido).toBe(false);
+  it('debe llamar a next si todo esta correcto', () => {
+    const req = {}; // por defecto pondrá req.file en el mock
+    const res = mockRes();
+    const next = vi.fn();
+    uploadMiddleware(req, res, next);
+    expect(next).toHaveBeenCalled();
   });
 });
 
-describe('uploadMiddleware – Validación de tamaño máximo', () => {
-  const TAMAÑO_MAXIMO = 10 * 1024 * 1024; // 10 MB
+describe('uploadMiddleware - fileFilter', () => {
+  it('fileFilter debe validar mimetypes correctos', () => {
+    const multerCalls = mockMulter.mock.calls;
+    const config = multerCalls[0][0]; // get the config passed to multer
+    const fileFilter = config.fileFilter;
 
-  it('debe aceptar archivos de 5 MB (dentro del límite)', () => {
-    // Arrange
-    const fileSize = 5 * 1024 * 1024;
+    const cbAllowed = vi.fn();
+    fileFilter({}, { mimetype: 'image/jpeg' }, cbAllowed);
+    expect(cbAllowed).toHaveBeenCalledWith(null, true);
 
-    // Act & Assert
-    expect(fileSize).toBeLessThanOrEqual(TAMAÑO_MAXIMO);
-  });
-
-  it('debe aceptar archivos de exactamente 10 MB (límite exacto)', () => {
-    // Arrange
-    const fileSize = 10 * 1024 * 1024;
-
-    // Act & Assert
-    expect(fileSize).toBeLessThanOrEqual(TAMAÑO_MAXIMO);
-  });
-
-  it('debe rechazar archivos de 15 MB (excede el límite)', () => {
-    // Arrange
-    const fileSize = 15 * 1024 * 1024;
-
-    // Act & Assert
-    expect(fileSize).toBeGreaterThan(TAMAÑO_MAXIMO);
+    const cbRejected = vi.fn();
+    fileFilter({}, { mimetype: 'application/pdf' }, cbRejected);
+    expect(cbRejected).toHaveBeenCalledWith(expect.any(Error), false);
   });
 });

@@ -10,7 +10,7 @@ const pool = new Pool({
   database: process.env.DB_NAME     || 'SkinDB',
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Crear tablas e inicializar recomendaciones si no existen

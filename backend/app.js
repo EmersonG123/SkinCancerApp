@@ -8,6 +8,7 @@ const analisisRoutes  = require('./src/routes/analisisRoutes');
 const historialRoutes = require('./src/routes/historialRoutes');
 const chatRoutes      = require('./src/routes/chatRoutes');
 const usuarioRoutes   = require('./src/routes/usuarioRoutes');
+const cacheRoutes     = require('./src/routes/cacheRoutes');
 const errorHandler    = require('./src/middlewares/errorHandler');
 const pool            = require('./src/config/db');
 
@@ -30,6 +31,7 @@ app.use('/api/analisis',  analisisRoutes);
 app.use('/api/historial', historialRoutes);
 app.use('/api/chat',      chatRoutes);
 app.use('/api/usuarios',  usuarioRoutes);
+app.use('/api/cache',     cacheRoutes);
 
 // ── Health check ─────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -153,6 +155,14 @@ app.get('/', (_req, res) => {
     </html>
   `);
 });
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
+
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 
 // ── 404 handler ───────────────────────────────────────────────
 app.use((_req, res) => {

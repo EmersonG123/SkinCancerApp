@@ -1,5 +1,4 @@
 // tests/integration/app.test.js
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 
 const mockDb = {
@@ -66,6 +65,55 @@ describe('Integración app.js', () => {
       expect(res.status).toBe(200);
       expect(res.body.db_connected).toBe(false);
       expect(res.body.db_error).toBe('Connection failure');
+    });
+
+    it('debe manejar error al contar tablas individuales', async () => {
+      mockDb.query
+        .mockResolvedValueOnce({ rows: [{ now: '2026-05-26' }] }) // SELECT NOW()
+        .mockRejectedValueOnce(new Error('Table error')) // Falla count usuarios
+        .mockResolvedValueOnce({ rows: [{ count: '5' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '7' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '12' }] })
+        .mockResolvedValueOnce({ rows: [{ id_usuario: 1, email: 'test@test.com' }] })
+        .mockResolvedValueOnce({ rows: [{ id_analisis: 1, clase_predicha: 'mel' }] });
+
+      const res = await request(app).get('/api/diagnostics');
+      expect(res.status).toBe(200);
+      expect(res.body.tables.usuarios.exists).toBe(false);
+      expect(res.body.tables.usuarios.error).toBe('Table error');
+    });
+
+    it('debe manejar error al consultar usuarios detallados', async () => {
+      mockDb.query
+        .mockResolvedValueOnce({ rows: [{ now: '2026-05-26' }] }) // SELECT NOW()
+        .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '5' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '7' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '12' }] })
+        .mockRejectedValueOnce(new Error('Users query error')) // Falla select usuarios
+        .mockResolvedValueOnce({ rows: [{ id_analisis: 1, clase_predicha: 'mel' }] });
+
+      const res = await request(app).get('/api/diagnostics');
+      expect(res.status).toBe(200);
+      expect(res.body.usuarios_error).toBe('Users query error');
+    });
+
+    it('debe manejar error al consultar analisis detallados', async () => {
+      mockDb.query
+        .mockResolvedValueOnce({ rows: [{ now: '2026-05-26' }] }) // SELECT NOW()
+        .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '5' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '7' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+        .mockResolvedValueOnce({ rows: [{ count: '12' }] })
+        .mockResolvedValueOnce({ rows: [{ id_usuario: 1, email: 'test@test.com' }] })
+        .mockRejectedValueOnce(new Error('Analysis query error')); // Falla select analisis
+
+      const res = await request(app).get('/api/diagnostics');
+      expect(res.status).toBe(200);
+      expect(res.body.analisis_error).toBe('Analysis query error');
     });
   });
 
