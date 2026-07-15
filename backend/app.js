@@ -16,14 +16,22 @@ const app = express();
 
 // ── Middlewares globales ─────────────────────────────────────
 const allowedOrigins = [
-  'http://localhost:5173', 
-  'http://localhost:3000', 
-  'http://localhost:4173',
-  'https://TU-FRONTEND.onrender.com' // <-- reemplaza por la URL real
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:4173",
+  "https://skincancerapp-jah5.onrender.com"
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    callback(new Error("No permitido por CORS"));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));

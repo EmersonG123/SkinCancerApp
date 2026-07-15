@@ -1,7 +1,7 @@
 // src/services/api.ts – Cliente de API centralizado para MedAI Skin
 import { User, DiagnosticRecord } from "../types";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api";
 
 // Helper para normalizar la estructura del usuario
 const normalizeUser = (u: any): User => {
