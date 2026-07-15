@@ -30,6 +30,10 @@ app.add_middleware(
 )
 
 # ── Health check ─────────────────────────────────────────────
+@app.get("/")
+def root():
+    return {"status": "OK", "servicio": "SkinCancerApp IA Service", "endpoints": ["/health", "/predict"]}
+
 @app.get("/health")
 def health():
     return {
