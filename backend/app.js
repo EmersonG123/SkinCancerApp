@@ -14,26 +14,41 @@ const pool            = require('./src/config/db');
 
 const app = express();
 
-// ── Middlewares globales ─────────────────────────────────────
+const FRONTEND_URL = "https://skincancerapp-jah5.onrender.com";
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "http://localhost:4173",
-  "https://skincancerapp-jah5.onrender.com" // ¡AQUÍ VA EL FRONTEND!
+  FRONTEND_URL,
 ];
 
 const corsOptions = {
-  origin: "https://skincancerapp-jah5.onrender.com",
+  origin: FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Habilitar pre-flight (OPTIONS) ANTES de todo, con la misma config
+// ── Middleware CORS manual (garantiza headers en TODAS las respuestas, incluso errores)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
+// cors() de Express para compatibilidad adicional
 app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 
 // ── Archivos estáticos (imágenes subidas) ────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
