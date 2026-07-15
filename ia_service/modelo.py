@@ -1,13 +1,16 @@
 # modelo.py – Carga del modelo DenseNet201 HAM10000
 import os
-# pyrefly: ignore [missing-import]
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
 
+# ── Optimización de memoria para Render (plan gratuito: 512MB RAM) ────────
+torch.set_num_threads(1)          # Un solo hilo – evita picos de RAM
+torch.set_num_interop_threads(1)  # Idem para operaciones inter-op
+
 # ── Dispositivo ──────────────────────────────────────────────
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")  # Render free tier no tiene GPU
 print(f"[modelo.py] Usando dispositivo: {device}")
 
 # ── Ruta del modelo ──────────────────────────────────────────
@@ -21,14 +24,18 @@ if not os.path.exists(MODEL_PATH):
 
 # ── Cargar modelo ────────────────────────────────────────────
 print(f"[modelo.py] Cargando modelo desde: {MODEL_PATH}")
-model = torch.load(
-    MODEL_PATH,
-    map_location=device,
-    weights_only=False,
-)
+with torch.no_grad():  # Deshabilitar gradientes durante la carga
+    model = torch.load(
+        MODEL_PATH,
+        map_location=device,
+        weights_only=False,
+    )
 model = model.to(device)
 model.eval()
-print("[modelo.py] Modelo cargado y listo para inferencia.")
+
+# Deshabilitar gradientes globalmente (ahorra ~50% de RAM durante inferencia)
+torch.set_grad_enabled(False)
+print("[modelo.py] Modelo cargado y listo para inferencia (modo bajo consumo).")
 
 # ── Clases HAM10000 (orden del entrenamiento) ─────────────────
 class_names = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
