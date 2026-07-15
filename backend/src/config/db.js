@@ -266,7 +266,8 @@ if (process.env.NODE_ENV !== 'test') {
       await inicializarAdmin(client);
       await inicializarHistorial(client);
 
-      // Logs de depuración para ver los registros reales e imágenes en base de datos
+      // Logs de depuración comentados por seguridad
+      /*
       const countRes = await client.query('SELECT COUNT(*) FROM analisis_ia');
       console.log(`📊 Cantidad de análisis en DB: ${countRes.rows[0].count}`);
       
@@ -278,6 +279,7 @@ if (process.env.NODE_ENV !== 'test') {
         LIMIT 10
       `);
       console.log('📋 Registros en DB:', JSON.stringify(recordsRes.rows, null, 2));
+      */
     } catch (dbError) {
       console.error('❌ Error al depurar la base de datos:', dbError.message);
     }

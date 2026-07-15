@@ -11,7 +11,7 @@ __pycache__/
 
 # IA / modelos
 *.pt
-*.pth
+#*.pth
 *.ckpt
 *.onnx
 
