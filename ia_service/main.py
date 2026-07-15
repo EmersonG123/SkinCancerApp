@@ -1,5 +1,6 @@
 # main.py – Servidor FastAPI para clasificación de lesiones de piel
 import os
+import gc
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import torch
@@ -77,10 +78,13 @@ async def predict(file: UploadFile = File(...)):
 
         clase = class_names[pred]
 
-        return {
+        result = {
             "clase":     clase,
             "confianza": round(confidence, 2),
         }
+
+        gc.collect()  # Liberar memoria tras cada predicción
+        return result
 
     except HTTPException:
         raise
