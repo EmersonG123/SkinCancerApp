@@ -1,4 +1,5 @@
 # main.py – Servidor FastAPI para clasificación de lesiones de piel
+import os
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import torch
@@ -86,7 +87,8 @@ async def predict(file: UploadFile = File(...)):
 # ── Inicio del servidor ──────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.environ.get("PORT", 8001))
     print("\n🤖 Iniciando microservicio de IA – SkinCancerApp")
     print(f"📊 Clases: {class_names}")
-    print("🌐 Escuchando en http://0.0.0.0:8001\n")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    print(f"🌐 Escuchando en http://0.0.0.0:{port}\n")
+    uvicorn.run(app, host="0.0.0.0", port=port)
