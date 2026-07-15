@@ -23,9 +23,12 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: true, // <-- Permite TODOS los orígenes dinámicamente y es compatible con credentials: true
   credentials: true,
 }));
+
+// Habilitar explicitly pre-flight (OPTIONS) para todas las rutas
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
