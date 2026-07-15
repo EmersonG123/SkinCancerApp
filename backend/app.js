@@ -19,7 +19,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "http://localhost:4173",
-  "https://skincancerapp-jah5.onrender.com"
+  "https://backend-ypc4.onrender.com"
 ];
 
 app.use(cors({
