@@ -23,8 +23,10 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: true, // <-- Permite TODOS los orígenes dinámicamente y es compatible con credentials: true
+  origin: "https://skincancerapp-jah5.onrender.com",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Habilitar explicitly pre-flight (OPTIONS) para todas las rutas
