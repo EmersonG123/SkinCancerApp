@@ -15,8 +15,15 @@ const pool            = require('./src/config/db');
 const app = express();
 
 // ── Middlewares globales ─────────────────────────────────────
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'http://localhost:3000', 
+  'http://localhost:4173',
+  'https://TU-FRONTEND.onrender.com' // <-- reemplaza por la URL real
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'],
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
