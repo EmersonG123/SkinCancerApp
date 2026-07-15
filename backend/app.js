@@ -22,15 +22,16 @@ const allowedOrigins = [
   "https://skincancerapp-jah5.onrender.com" // ¡AQUÍ VA EL FRONTEND!
 ];
 
-app.use(cors({
+const corsOptions = {
   origin: "https://skincancerapp-jah5.onrender.com",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"]
-}));
+};
 
-// Habilitar explicitly pre-flight (OPTIONS) para todas las rutas
-app.options('*', cors());
+// Habilitar pre-flight (OPTIONS) ANTES de todo, con la misma config
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
