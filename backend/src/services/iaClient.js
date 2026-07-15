@@ -3,11 +3,20 @@ const axios = require('axios');
 const FormData = require('form-data');
 
 // Validar que IA_URL esté configurada al arrancar
-const IA_URL = process.env.IA_URL;
-if (!IA_URL) {
+const IA_BASE = process.env.IA_URL;
+if (!IA_BASE) {
   console.error('⚠️  ERROR: La variable de entorno IA_URL no está configurada.');
   console.error('   Configure IA_URL en las variables de entorno de Render apuntando al ia_service.');
 }
+
+// Garantizar que siempre apunte a /predict, sin importar cómo esté configurada IA_URL
+// Ej: "https://ia-service-roxp.onrender.com" → "https://ia-service-roxp.onrender.com/predict"
+//     "https://ia-service-roxp.onrender.com/predict" → "https://ia-service-roxp.onrender.com/predict"
+const IA_URL = IA_BASE
+  ? (IA_BASE.endsWith('/predict') ? IA_BASE : IA_BASE.replace(/\/$/, '') + '/predict')
+  : null;
+
+console.log(`[iaClient] IA_URL efectiva: ${IA_URL}`);
 
 /**
  * Envía una imagen al microservicio de IA y retorna la predicción.
