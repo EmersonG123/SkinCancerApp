@@ -7,16 +7,16 @@ from PIL import Image
 import io
 import numpy as np
 import onnxruntime as ort
-
 # ── Clases HAM10000 ──────────────────────────────────────────
 class_names = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
 
 # ── Cargar Modelo ONNX ───────────────────────────────────────
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "modelo.onnx")
+ort_session = None
+
 if not os.path.exists(MODEL_PATH):
-    print("ADVERTENCIA: modelo.onnx no encontrado. Ejecuta convert_to_onnx.py primero.")
+    print("ADVERTENCIA: modelo.onnx no encontrado en el servidor.")
 else:
-    # onnxruntime es muy ligero en memoria
     ort_session = ort.InferenceSession(MODEL_PATH)
 
 # ── Utilidades de Preprocesamiento ───────────────────────────
@@ -72,6 +72,9 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Tipo de archivo no soportado.")
 
     try:
+        if ort_session is None:
+            raise HTTPException(status_code=500, detail="El modelo ONNX no se encontró en el servidor.")
+            
         contents = await file.read()
         img = Image.open(io.BytesIO(contents)).convert("RGB")
         
