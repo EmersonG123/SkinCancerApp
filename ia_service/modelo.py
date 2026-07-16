@@ -15,12 +15,12 @@ device = torch.device("cpu")  # Render free tier no tiene GPU
 print(f"[modelo.py] Usando dispositivo: {device}")
 
 # ── Ruta del modelo ──────────────────────────────────────────────────────
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "densenet201_ham10000_entrenado.pt")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "densenet201_cuantizado.pt")
 
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(
         f"Modelo no encontrado en: {MODEL_PATH}\n"
-        "Coloque el archivo 'densenet201_ham10000_entrenado.pt' en la carpeta ia_service/"
+        "Asegúrate de ejecutar el script 'quantize_script.py' primero."
     )
 
 # ── Cargar modelo ────────────────────────────────────────────────────────
@@ -31,20 +31,7 @@ with torch.no_grad():
 model = model.to(device)
 model.eval()
 
-# ── Cuantización dinámica (reduce RAM de ~400MB a ~100MB en inferencia) ───
-print("[modelo.py] Aplicando cuantización dinámica INT8...")
-try:
-    model = torch.quantization.quantize_dynamic(
-        model,
-        {torch.nn.Linear, torch.nn.Conv2d},
-        dtype=torch.qint8
-    )
-    print("[modelo.py] Cuantización aplicada con éxito.")
-except Exception as e:
-    print(f"[modelo.py] Cuantización no disponible, usando modelo original: {e}")
-
-gc.collect()  # Liberar memoria después de cuantizar
-print("[modelo.py] Modelo listo para inferencia.")
+print("[modelo.py] Modelo cuantizado listo para inferencia.")
 
 # ── Clases HAM10000 (orden del entrenamiento) ─────────────────────────────
 class_names = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]

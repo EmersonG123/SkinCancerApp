@@ -66,8 +66,8 @@ async def predict(file: UploadFile = File(...)):
         contents = await file.read()
         img = Image.open(io.BytesIO(contents)).convert("RGB")
 
-        # Aplicar transformaciones
-        x = transform(img).unsqueeze(0).to(device)
+        # Aplicar transformaciones y convertir a float16
+        x = transform(img).unsqueeze(0).to(device).half()
 
         # Inferencia
         with torch.no_grad():
