@@ -1,102 +1,102 @@
-# main.py – Servidor FastAPI para clasificación de lesiones de piel
+# main.py – Servidor FastAPI para clasificación de lesiones de piel (ONNX)
 import os
 import gc
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import torch
-import torch.nn.functional as F
 from PIL import Image
 import io
+import numpy as np
+import onnxruntime as ort
 
-from modelo import model, device, transform, class_names
+# ── Clases HAM10000 ──────────────────────────────────────────
+class_names = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
+
+# ── Cargar Modelo ONNX ───────────────────────────────────────
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "modelo.onnx")
+if not os.path.exists(MODEL_PATH):
+    print("ADVERTENCIA: modelo.onnx no encontrado. Ejecuta convert_to_onnx.py primero.")
+else:
+    # onnxruntime es muy ligero en memoria
+    ort_session = ort.InferenceSession(MODEL_PATH)
+
+# ── Utilidades de Preprocesamiento ───────────────────────────
+def preprocess_image(img: Image.Image) -> np.ndarray:
+    # Resize a 224x224
+    img = img.resize((224, 224), Image.Resampling.BILINEAR)
+    # Convertir a arreglo numpy y escalar a [0, 1]
+    img_array = np.array(img).astype(np.float32) / 255.0
+    
+    # Normalización de ImageNet: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    img_array = (img_array - mean) / std
+    
+    # Cambiar forma de (H, W, C) a (C, H, W)
+    img_array = np.transpose(img_array, (2, 0, 1))
+    # Añadir dimensión de batch: (1, C, H, W)
+    img_array = np.expand_dims(img_array, axis=0)
+    
+    return img_array
+
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum(axis=1, keepdims=True)
 
 # ── Aplicación FastAPI ───────────────────────────────────────
 app = FastAPI(
     title="Skin Lesion Classifier – HAM10000",
-    description="Microservicio de clasificación de lesiones cutáneas usando DenseNet201 entrenado con HAM10000",
+    description="Microservicio usando ONNX Runtime",
     version="1.0.0",
 )
 
-# ── CORS (para desarrollo) ───────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "https://skincancerapp-jah5.onrender.com"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Health check ─────────────────────────────────────────────
 @app.get("/")
 def root():
-    return {"status": "OK", "servicio": "SkinCancerApp IA Service", "endpoints": ["/health", "/predict"]}
+    return {"status": "OK", "servicio": "SkinCancerApp IA Service (ONNX)"}
 
 @app.get("/health")
 def health():
-    return {
-        "status": "OK",
-        "modelo": "DenseNet201 HAM10000",
-        "device": str(device),
-        "clases": class_names,
-    }
+    return {"status": "OK", "modelo": "ONNX HAM10000", "clases": class_names}
 
-# ── Endpoint de predicción ───────────────────────────────────
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    """
-    Recibe una imagen de una lesión cutánea y devuelve la clase predicha y confianza.
-
-    Returns:
-        { "clase": "mel", "confianza": 84.73 }
-    """
-    # Validar tipo de archivo
     tipos_permitidos = {"image/jpeg", "image/png", "image/webp", "image/bmp"}
     if file.content_type not in tipos_permitidos:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Tipo de archivo no soportado: {file.content_type}. Use JPEG, PNG, WEBP o BMP."
-        )
+        raise HTTPException(status_code=400, detail="Tipo de archivo no soportado.")
 
     try:
-        # Leer imagen
         contents = await file.read()
         img = Image.open(io.BytesIO(contents)).convert("RGB")
+        
+        # Preprocesar
+        input_array = preprocess_image(img)
+        
+        # Inferencia con ONNX
+        ort_inputs = {ort_session.get_inputs()[0].name: input_array}
+        ort_outs = ort_session.run(None, ort_inputs)
+        
+        # Postprocesamiento
+        logits = ort_outs[0]
+        probs = softmax(logits)[0]
+        pred_idx = np.argmax(probs)
+        confidence = float(probs[pred_idx] * 100)
+        
+        clase = class_names[pred_idx]
+        
+        gc.collect()
+        return {"clase": clase, "confianza": round(confidence, 2)}
 
-        # Aplicar transformaciones y convertir a float16
-        x = transform(img).unsqueeze(0).to(device).half()
-
-        # Inferencia
-        with torch.no_grad():
-            output = model(x)
-            probs  = F.softmax(output, dim=1)
-            pred   = torch.argmax(probs, dim=1).item()
-            confidence = probs[0][pred].item() * 100
-
-        clase = class_names[pred]
-
-        result = {
-            "clase":     clase,
-            "confianza": round(confidence, 2),
-        }
-
-        gc.collect()  # Liberar memoria tras cada predicción
-        return result
-
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en la inferencia: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error en inferencia: {str(e)}")
 
-
-# ── Inicio del servidor ──────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
-    print("\n🤖 Iniciando microservicio de IA – SkinCancerApp")
-    print(f"📊 Clases: {class_names}")
-    print(f"🌐 Escuchando en http://0.0.0.0:{port}\n")
     uvicorn.run(app, host="0.0.0.0", port=port)
